@@ -1,0 +1,150 @@
+:root {
+    --azul-primario: #0d47a1;
+    --azul-secundario: #1565c0;
+    --azul-hover: #0b3d91;
+    --azul-claro: #e8f1fb;
+    --azul-borde: #90caf9;
+    --blanco: #ffffff;
+    --gris-texto: #37474f;
+}
+
+body {
+    background-color: var(--azul-claro);
+    color: var(--gris-texto);
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+/* Barra de navegación */
+.navbar-sistema {
+    background-color: var(--azul-primario) !important;
+    box-shadow: 0 2px 10px rgba(13, 71, 161, 0.35);
+    border-bottom: 3px solid var(--azul-hover);
+}
+.navbar-sistema .navbar-brand {
+    color: #ffffff !important;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+.navbar-sistema .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+.navbar-sistema .nav-link:hover,
+.navbar-sistema .nav-link.active {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+.navbar-sistema .nav-link.active {
+    border-bottom: 2px solid #ffffff;
+}
+.navbar-sistema .navbar-text {
+    color: #ffffff !important;
+}
+.navbar-sistema .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Barra de pie de página (footer) */
+.footer-sistema {
+    background-color: var(--azul-primario);
+    color: #ffffff;
+    padding: 1rem 1.5rem;
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.85rem;
+    border-top: 3px solid var(--azul-hover);
+}
+.footer-sistema a {
+    color: #ffffff;
+    text-decoration: underline;
+}
+.footer-sistema a:hover {
+    color: var(--azul-claro);
+}
+
+/* Barra superior */
+.topbar-marca {
+    background-color: var(--azul-primario);
+    color: var(--blanco);
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 6px rgba(13, 71, 161, 0.25);
+}
+
+/* Tarjetas */
+.card {
+    border: 1px solid var(--azul-borde);
+    border-radius: 0.6rem;
+    box-shadow: 0 2px 8px rgba(13, 71, 161, 0.08);
+}
+
+.card-body {
+    background-color: var(--blanco);
+}
+
+/* Botones */
+.btn-primary {
+    background-color: var(--azul-primario);
+    border-color: var(--azul-primario);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--azul-hover);
+    border-color: var(--azul-hover);
+}
+
+.btn-outline-primary {
+    color: var(--azul-primario);
+    border-color: var(--azul-primario);
+}
+.btn-outline-primary:hover {
+    background-color: var(--azul-primario);
+    border-color: var(--azul-primario);
+}
+
+/* Tabla */
+.table thead {
+    background-color: var(--azul-primario);
+    color: var(--blanco);
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--azul-claro);
+}
+
+/* Modal */
+.modal-header {
+    background-color: var(--azul-primario);
+    color: var(--blanco);
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.modal-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Inputs */
+.form-control:focus {
+    border-color: var(--azul-secundario);
+    box-shadow: 0 0 0 0.2rem rgba(21, 101, 192, 0.25);
+}
+
+/* Paginación */
+.pagination .page-link {
+    color: var(--azul-primario);
+}
+.pagination .page-item.active .page-link {
+    background-color: var(--azul-primario);
+    border-color: var(--azul-primario);
+}
+
+/* Buscador */
+#buscador-marca {
+    max-width: 400px;
+}
+
+/* Spinner de carga */
+#spinner-carga {
+    display: none;
+}
