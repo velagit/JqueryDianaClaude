@@ -45,6 +45,13 @@ $usuario      = usuarioActual();
                         <i class="bi bi-clipboard-data me-1"></i> Inventario
                     </a>
                 </li>
+
+                 <li class="nav-item">
+                    <a class="nav-link <?= $paginaActiva === 'ventas' ? 'active' : '' ?>" href="ventas.php">
+                        <i class="bi bi-cash-coin me-1"></i> Ventas
+                    </a>
+                </li>
+                
                 <?php if (esAdministrador()): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $paginaActiva === 'usuarios' ? 'active' : '' ?>" href="usuarios.php">
