@@ -51,7 +51,23 @@ $usuario      = usuarioActual();
                         <i class="bi bi-cash-coin me-1"></i> Ventas
                     </a>
                 </li>
-                
+                <li class="nav-item">
+                    <a class="nav-link <?= $paginaActiva === 'corte' ? 'active' : '' ?>" href="corte.php">
+                        <i class="bi bi-calculator me-1"></i> Corte de Caja
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle <?= $paginaActiva === 'vendedores' ? 'active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-receipt-cutoff me-1"></i> Vales
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="vendedores.php"><i class="bi bi-person-badge me-1"></i> Vendedores</a></li>
+                        <li><a class="dropdown-item" href="bloqueados.php"><i class="bi bi-lock-fill me-1"></i> Vales Bloqueados</a></li>
+                        <li><a class="dropdown-item" href="consulta_vales.php"><i class="bi bi-journal-text me-1"></i> Consulta de Vales</a></li>
+                    </ul>
+                </li>
+
+
                 <?php if (esAdministrador()): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $paginaActiva === 'usuarios' ? 'active' : '' ?>" href="usuarios.php">

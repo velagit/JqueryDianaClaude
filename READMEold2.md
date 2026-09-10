@@ -341,62 +341,10 @@ marcas-crud/
 | Reportes Rave `ReciboPago` / `ReciboPagoVale` | Ticket HTML generado en el navegador (`imprimirTicket()` en `ventas.js`), pensado para impresoras térmicas de 80mm, que se abre en una ventana nueva y llama a `window.print()` automáticamente |
 | `Abre_Cajon_Dinero()` (comando ESC/POS directo) | Botón "Cajón" — permanece como aviso informativo; muchas impresoras de tickets abren el cajón automáticamente al recibir el trabajo de impresión, así que en la práctica el ticket impreso puede resolver esto sin código adicional, dependiendo del modelo de impresora |
 
-## Módulo de Vales — Fase 3 (Vendedores, Bloqueados, Corte de Caja, Consulta de Vales)
+### Pendiente (ya no forma parte del alcance original, pero quedó anotado por si lo necesitas después)
 
-Convertido a partir de `FBloqueaVale.pas`, `FCVales.pas` y `CorteD.pas` (todos parte del mismo sistema Pascal/Delphi de ventas).
-
-### Estructura añadida
-
-```
-marcas-crud/
-├── api/
-│   ├── vendedores.php        <- CRUD de vendedores (tabla vendedores, ya existente)
-│   ├── bloqueados.php        <- Equivalente a FBloqueaVale.pas
-│   ├── corte.php              <- Equivalente a CorteD.pas
-│   └── consulta_vales.php     <- Equivalente a FCVales.pas
-├── assets/js/
-│   ├── vendedores.js, bloqueados.js, corte.js, consulta_vales.js
-├── vendedores.php, bloqueados.php, corte.php, consulta_vales.php
-```
-
-Todo agrupado en el menú **Vales ▾** de la barra de navegación, más un enlace directo a **Corte de Caja**.
-
-### Vendedores (`vendedores.php`)
-
-CRUD completo sobre la tabla `vendedores` ya existente (no estaba en el alcance original como pantalla dedicada,
-pero era necesario para dar de alta a quien va a usar vales — antes solo se podía hacer directo en la base de datos).
-Protecciones agregadas: no se puede eliminar un vendedor(a) que ya tenga ventas de vale registradas (se sugiere
-marcarlo(a) como "Cancelado" en su lugar).
-
-### Vales Bloqueados (`bloqueados.php`) — de `FBloqueaVale.pas`
-
-| Original | Conversión |
-|---|---|
-| `Guarda_Datos(Nuevo: Boolean)` (INSERT/UPDATE directo con SQL concatenado) | Mismo INSERT/UPDATE pero con **sentencias preparadas** (el original era vulnerable a inyección SQL) |
-| Si el campo queda vacío, se guarda como `'0'` | Réplica exacta en `crearBloqueo()` |
-| Llave compuesta `(novendedor, novale)` | Igual, usada en `PUT`/`DELETE` |
-| `Borrar()` | `DELETE api/bloqueados.php?novendedor=&novale=` |
-
-Estos bloqueos son justo los que valida `api/ventas.php` al pagar con vale (Fase 2).
-
-### Corte de Caja (`corte.php`) — de `CorteD.pas`
-
-| Original | Conversión |
-|---|---|
-| Reporte Rave `VentasDia` (`RSOCIAL`, `RECIBOSDIA`, `SUBTOTAL`, `VENTADIA`, `IVADIA`) | Mismo contenido, como HTML imprimible (`imprimirCorte()` en `corte.js`) |
-| `UPDATE empresa SET RECIBOSDIA=0, SUBTOTAL=0, VENTADIA=0, IVADIA=0` | Idéntico, en `POST api/corte.php?action=confirmar` |
-
-**Cambio deliberado respecto al original:** el Delphi original imprimía y reiniciaba los contadores en un solo
-clic, sin confirmación. Agregué una alerta de confirmación explícita antes de reiniciar (acción irreversible) y
-separé "Imprimir vista previa" de "Confirmar corte", para evitar que alguien reinicie el día por accidente.
-Si prefieres el comportamiento original de un solo paso, dímelo y lo ajusto.
-
-### Consulta de Vales (`consulta_vales.php`) — de `FCVales.pas`
-
-Pantalla de consulta histórica de ventas por vale/remisión (tabla `rventas`), con los mismos filtros del
-original (número de vale, número de vendedor(a), fecha) y el mismo total sumado de las notas que hacen match.
-Al hacer clic en una nota se muestra su detalle de artículos, usando la vista `vmodrventas` (igual que
-`IBVModRVentas` en el original).
+- Gestión de **vendedores** y **vales bloqueados** vía interfaz (hoy son de solo lectura — se leen directamente de las tablas ya existentes).
+- Reportes de corte de caja / cierre de turno (usan los contadores de `empresa`, que ya se actualizan correctamente).
 
 ### Nota técnica: tabla `peps` sin llave primaria
 
@@ -411,5 +359,4 @@ un `id AUTO_INCREMENT`.
 - **Marcas**, **Corridas**, **Modelos** (CRUD completos)
 - **Existencias** (captura por modelo/talla)
 - **Consulta de Existencias**, **Inventario**
-- **Ventas**: captura, cobro de contado con costeo PEPS, pago con vale/remisión, ticket imprimible en HTML, devoluciones simples
-- **Vales**: gestión de vendedores, vales bloqueados, corte de caja diario, consulta histórica de vales
+- **Ventas** (Fase 1 + Fase 2 completas): captura, cobro de contado con costeo PEPS, pago con vale/remisión, ticket imprimible en HTML, devoluciones simples
