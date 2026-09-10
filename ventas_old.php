@@ -14,8 +14,8 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="alert alert-info">
     <i class="bi bi-info-circle me-1"></i>
-    Fase 2 del módulo: se agregó el pago con <strong>vale/remisión</strong> y el <strong>ticket imprimible</strong>.
-    El botón <strong>Cajón</strong> sigue siendo solo un aviso hasta que se configure una impresora de red compatible con ESC/POS.
+    Fase 1 del módulo: captura de artículos (código de barras o búsqueda manual) y cobro de <strong>contado</strong>.
+    El pago con <strong>vale/remisión</strong>, el <strong>ticket imprimible</strong> y las <strong>devoluciones completas</strong> se agregarán en las siguientes fases.
 </div>
 
 <div class="card mb-3">
@@ -157,56 +157,6 @@ require_once __DIR__ . '/includes/header.php';
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" id="btn-confirmar-cobro" class="btn btn-success">
                         <i class="bi bi-file-earmark-check me-1"></i> Confirmar venta
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Vale / Remisión -->
-<div class="modal fade" id="modalRemision" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="form-remision">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-receipt me-1"></i> Vale / Remisión</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="fs-5">Total (precio de vale): <strong id="texto-total-remision">$0.00</strong></p>
-
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="remision-forma-pago" id="input-radio-efectivo" value="E" checked>
-                            <label class="form-check-label" for="input-radio-efectivo">Efectivo (a precio de vale)</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="remision-forma-pago" id="input-radio-vale" value="V">
-                            <label class="form-check-label" for="input-radio-vale">Cargar a vale de empleado(a)</label>
-                        </div>
-                    </div>
-
-                    <div id="bloque-remision-efectivo">
-                        <label class="form-label">Monto pagado</label>
-                        <input type="number" step="0.01" id="input-pagado-remision" class="form-control">
-                    </div>
-
-                    <div id="bloque-remision-vale" style="display:none;">
-                        <div class="mb-3">
-                            <label class="form-label">Número de vale</label>
-                            <input type="number" id="input-num-vale" class="form-control">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Número de vendedor(a)</label>
-                            <input type="number" id="input-num-vendedor" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" id="btn-confirmar-remision" class="btn btn-warning">
-                        <i class="bi bi-file-earmark-check me-1"></i> Confirmar
                     </button>
                 </div>
             </form>

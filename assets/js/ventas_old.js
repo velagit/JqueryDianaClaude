@@ -3,14 +3,13 @@ $(function () {
 
     let carrito = [];         // items en el ticket actual
     let folioActual = null;
-    let datosEmpresa = null;
+    let modoDevolucion = false;
 
     // -----------------------------------------------------------------
-    // Inicio: folio, catálogo de marcas y datos fiscales de la empresa
+    // Inicio: obtener el siguiente folio y el catálogo de marcas
     // -----------------------------------------------------------------
     cargarFolio();
     cargarMarcas();
-    cargarDatosEmpresa();
     $('#codbarra').focus();
 
     // -----------------------------------------------------------------
@@ -144,44 +143,11 @@ $(function () {
     });
 
     $('#btn-remision').on('click', function () {
-        if (carrito.length === 0) {
-            Swal.fire('Carrito vacío', 'Agrega al menos un artículo antes de continuar.', 'info');
-            return;
-        }
-        abrirModalRemision();
-    });
-
-    // Alternar entre "Efectivo" y "Vale" dentro del modal de remisión
-    $('input[name="remision-forma-pago"]').on('change', function () {
-        const esVale = $(this).val() === 'V';
-        $('#bloque-remision-vale').toggle(esVale);
-        $('#bloque-remision-efectivo').toggle(!esVale);
-    });
-
-    $('#form-remision').on('submit', function (e) {
-        e.preventDefault();
-
-        const formaPago = $('input[name="remision-forma-pago"]:checked').val();
-        const datos = { carrito: carrito, formaPago: formaPago };
-
-        if (formaPago === 'V') {
-            datos.numVale = $('#input-num-vale').val();
-            datos.numVendedor = $('#input-num-vendedor').val();
-            if (!datos.numVale || !datos.numVendedor) {
-                Swal.fire('Datos incompletos', 'Debes indicar el número de vale y el número de vendedor.', 'warning');
-                return;
-            }
-        } else {
-            const pagado = parseFloat($('#input-pagado-remision').val());
-            const totalVale = calcularTotalVale();
-            if (isNaN(pagado) || pagado < totalVale) {
-                Swal.fire('Monto insuficiente', 'El monto pagado es menor al importe (a precio de vale).', 'warning');
-                return;
-            }
-            datos.pagado = pagado;
-        }
-
-        guardarVentaRemision(datos);
+        Swal.fire({
+            icon: 'info',
+            title: 'Vale / Remisión',
+            text: 'El pago con vale de empleado se agrega en la siguiente fase de este módulo.',
+        });
     });
 
     $('#form-cobro').on('submit', function (e) {
@@ -207,207 +173,6 @@ $(function () {
     /* ================================================================ */
     /*  Funciones principales                                            */
     /* ================================================================ */
-
-    function cargarDatosEmpresa() {
-        $.get(API_URL, { action: 'empresa' }, function (respuesta) {
-            if (respuesta.success) {
-                datosEmpresa = respuesta.data;
-            }
-        });
-    }
-
-    function calcularTotal() {
-        return carrito.reduce(function (acumulado, item) {
-            return acumulado + parseFloat(item.precio || 0);
-        }, 0);
-    }
-
-    function calcularTotalVale() {
-        return carrito.reduce(function (acumulado, item) {
-            return acumulado + parseFloat(item.preciovale || 0);
-        }, 0);
-    }
-
-    function abrirModalRemision() {
-        $('#form-remision')[0].reset();
-        $('#input-radio-efectivo').prop('checked', true);
-        $('#bloque-remision-vale').hide();
-        $('#bloque-remision-efectivo').show();
-        $('#texto-total-remision').text(formatoMoneda(calcularTotalVale()));
-        $('#modalRemision').modal('show');
-    }
-
-    function guardarVentaRemision(datos) {
-        $('#btn-confirmar-remision').prop('disabled', true);
-
-        $.ajax({
-            url: `${API_URL}?action=guardar_remision`,
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(datos),
-            dataType: 'json',
-        })
-            .done(function (respuesta) {
-                if (respuesta.success) {
-                    $('#modalRemision').modal('hide');
-                    imprimirTicket(respuesta.data);
-                    mostrarResumenRemision(respuesta.data);
-                } else {
-                    Swal.fire('No se pudo guardar la venta', respuesta.message, 'error');
-                }
-            })
-            .fail(function (xhr) {
-                const r = xhr.responseJSON;
-                Swal.fire('Error', r ? r.message : 'Ocurrió un error de conexión.', 'error');
-            })
-            .always(function () {
-                $('#btn-confirmar-remision').prop('disabled', false);
-            });
-    }
-
-    function mostrarResumenRemision(venta) {
-        let filasExistencia = '';
-        venta.detalle.forEach(function (linea) {
-            filasExistencia += `
-                <tr>
-                    <td>${escaparHtml(linea.codbarra)}</td>
-                    <td>${escaparHtml(linea.modelodes)}</td>
-                    <td>${escaparHtml(linea.talla)}</td>
-                    <td>${linea.existencia_restante}</td>
-                </tr>`;
-        });
-
-        let bloquePago = '';
-        if (venta.formaPago === 'V') {
-            bloquePago = `
-                <p class="mb-1">Vale: <strong>${venta.numVale}</strong> — Vendedor(a): <strong>${escaparHtml(venta.vendedorNombre || '')}</strong> (#${venta.numVendedor})</p>
-                <p class="mb-1">Importe de vale (¼): ${formatoMoneda(venta.impoVale)}</p>
-                <p class="mb-3">Se descuenta el día <strong>${venta.diaPago.dia} de ${venta.diaPago.mes} de ${venta.diaPago.anio}</strong></p>
-            `;
-        } else {
-            bloquePago = `
-                <p class="mb-1">Pagado: ${formatoMoneda(venta.pagado)}</p>
-                <p class="mb-3">Cambio: <strong>${formatoMoneda(venta.cambio)}</strong></p>
-            `;
-        }
-
-        Swal.fire({
-            icon: 'success',
-            title: `Remisión #${venta.folio} registrada`,
-            html: `
-                <div class="text-start">
-                    <p class="mb-1">Total (precio de vale): <strong>${formatoMoneda(venta.total)}</strong></p>
-                    ${bloquePago}
-                    <p class="mb-1"><strong>Existencia restante por artículo:</strong></p>
-                    <div class="table-responsive" style="max-height:200px; overflow-y:auto;">
-                        <table class="table table-sm table-bordered mb-0">
-                            <thead><tr><th>Código</th><th>Modelo</th><th>Talla</th><th>Quedan</th></tr></thead>
-                            <tbody>${filasExistencia}</tbody>
-                        </table>
-                    </div>
-                </div>
-            `,
-            confirmButtonText: 'Nueva venta',
-            allowOutsideClick: false,
-        }).then(function () {
-            iniciarNuevaVenta();
-        });
-    }
-
-    /**
-     * Genera el ticket como HTML imprimible y abre el diálogo de impresión
-     * del navegador (reemplaza a los reportes Rave ReciboPago/ReciboPagoVale).
-     * Nota: algunas impresoras de tickets con cajón de dinero abren el
-     * cajón automáticamente al recibir el trabajo de impresión.
-     */
-    function imprimirTicket(venta) {
-        const empresa = datosEmpresa || {};
-        const esVale = venta.tipo === 'remision' && venta.formaPago === 'V';
-
-        let filas = '';
-        venta.detalle.forEach(function (linea) {
-            filas += `
-                <tr>
-                    <td>${escaparHtml(linea.modelodes)}</td>
-                    <td>${escaparHtml(linea.color)}</td>
-                    <td>${escaparHtml(linea.talla)}</td>
-                    <td class="text-end">${formatoMoneda(linea.precio)}</td>
-                </tr>`;
-        });
-
-        let bloquePago = '';
-        if (esVale) {
-            bloquePago = `
-                <div class="linea-punteada"></div>
-                <p>VALE No. ${venta.numVale}</p>
-                <p>VENDEDOR(A): ${escaparHtml(venta.vendedorNombre || '')} (#${venta.numVendedor})</p>
-                <p>IMPORTE DE VALE (1/4): ${formatoMoneda(venta.impoVale)}</p>
-                <p>SE DESCUENTA EL ${venta.diaPago.dia} DE ${(venta.diaPago.mes || '').toUpperCase()} DE ${venta.diaPago.anio}</p>
-            `;
-        } else {
-            bloquePago = `
-                <p>PAGADO: ${formatoMoneda(venta.pagado)}</p>
-                <p>CAMBIO: ${formatoMoneda(venta.cambio)}</p>
-            `;
-        }
-
-        const html = `
-            <!DOCTYPE html>
-            <html lang="es">
-            <head>
-                <meta charset="UTF-8">
-                <title>Ticket #${venta.folio}</title>
-                <style>
-                    @page { margin: 0; }
-                    body { font-family: 'Courier New', monospace; font-size: 12px; width: 280px; margin: 0 auto; padding: 10px; color: #000; }
-                    h2, h3 { text-align: center; margin: 4px 0; }
-                    p { margin: 2px 0; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-                    th, td { font-size: 11px; padding: 2px 0; text-align: left; }
-                    .text-end { text-align: right; }
-                    .text-center { text-align: center; }
-                    .linea-punteada { border-top: 1px dashed #000; margin: 6px 0; }
-                    .totales td { font-weight: bold; }
-                </style>
-            </head>
-            <body onload="window.print()">
-                <h3>${escaparHtml(empresa.RSOCIAL || 'Ticket de Venta')}</h3>
-                <p class="text-center">${escaparHtml(empresa.DIRECCION || '')}</p>
-                <p class="text-center">${escaparHtml(empresa.CIUDAD || '')} ${escaparHtml(empresa.ESTADO || '')}</p>
-                ${empresa.RFC ? `<p class="text-center">RFC: ${escaparHtml(empresa.RFC)}</p>` : ''}
-                <div class="linea-punteada"></div>
-                <p>FOLIO: ${venta.folio} &nbsp; FECHA: ${venta.fecha}</p>
-                <p>TIPO: ${esVale ? 'REMISIÓN (VALE)' : (venta.tipo === 'remision' ? 'REMISIÓN (EFECTIVO)' : 'VENTA DE CONTADO')}</p>
-                <div class="linea-punteada"></div>
-                <table>
-                    <thead>
-                        <tr><th>Modelo</th><th>Color</th><th>Talla</th><th class="text-end">Precio</th></tr>
-                    </thead>
-                    <tbody>${filas}</tbody>
-                </table>
-                <div class="linea-punteada"></div>
-                <table class="totales">
-                    <tr><td>SUBTOTAL</td><td class="text-end">${formatoMoneda(venta.subtotal)}</td></tr>
-                    <tr><td>IVA</td><td class="text-end">${formatoMoneda(venta.iva)}</td></tr>
-                    <tr><td>TOTAL</td><td class="text-end">${formatoMoneda(venta.total)}</td></tr>
-                </table>
-                <div class="linea-punteada"></div>
-                ${bloquePago}
-                <div class="linea-punteada"></div>
-                <p class="text-center">¡Gracias por su compra!</p>
-            </body>
-            </html>
-        `;
-
-        const ventanaTicket = window.open('', 'ticket', 'width=350,height=600');
-        if (!ventanaTicket) {
-            Swal.fire('Bloqueado por el navegador', 'Permite las ventanas emergentes para imprimir el ticket.', 'warning');
-            return;
-        }
-        ventanaTicket.document.open();
-        ventanaTicket.document.write(html);
-        ventanaTicket.document.close();
-    }
 
     function cargarFolio() {
         $.get(API_URL, { action: 'folio' }, function (respuesta) {
@@ -493,6 +258,12 @@ $(function () {
         renderizarCarrito();
     });
 
+    function calcularTotal() {
+        return carrito.reduce(function (acumulado, item) {
+            return acumulado + parseFloat(item.precio || 0);
+        }, 0);
+    }
+
     function abrirModalCobro() {
         const total = calcularTotal();
         $('#texto-total-modal').text(formatoMoneda(total));
@@ -514,8 +285,6 @@ $(function () {
             .done(function (respuesta) {
                 if (respuesta.success) {
                     $('#modalCobro').modal('hide');
-                    respuesta.data.tipo = 'contado';
-                    imprimirTicket(respuesta.data);
                     mostrarResumenVenta(respuesta.data);
                 } else {
                     Swal.fire('No se pudo guardar la venta', respuesta.message, 'error');

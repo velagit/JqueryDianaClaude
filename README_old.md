@@ -217,146 +217,63 @@ Como la vista original **ya usaba jQuery y AJAX puro** (no Blade con formularios
 
 El endpoint `modelosPorMarca` existe en la API (igual que en tu Laravel original) pero no lo usa la vista `index.blade.php` — lo dejé disponible por si lo consumes desde otro lugar.
 
-## Módulo de Usuarios, Sesión y Layout Compartido
+## Todos los módulos convertidos ✅
 
-Estructura añadida:
+Con esto quedan completos los 5 módulos de tu proyecto Laravel:
+- **Marcas** (CRUD completo)
+- **Corridas** (anidado a Marcas)
+- **Modelos** (anidado a Marcas)
+- **Existencias** (captura por modelo/talla)
+- **Consulta de Existencias** (ConsartController)
+- **Inventario** (InventarioController)
 
-```
-marcas-crud/
-├── config/
-│   └── session.php              <- Bootstrap de sesión + funciones de autenticación
-├── includes/
-│   ├── header.php                <- <head> + barra de navegación + apertura de <div class="container-fluid">
-│   └── footer.php                <- Cierra el contenedor + carga jQuery/Bootstrap/SweetAlert2
-├── api/
-│   ├── auth.php                  <- login / logout / estado de sesión
-│   └── usuarios.php              <- CRUD de usuarios (solo administradores)
-├── assets/js/
-│   ├── login.js
-│   └── usuarios.js
-├── login.php                     <- Página de inicio de sesión (sin navbar)
-├── logout.php                    <- Cierra sesión y redirige a login.php
-├── usuarios.php                  <- Gestión de usuarios (solo administradores)
-├── instalar_admin.php            <- Script de un solo uso: crea el primer administrador
-└── setup_usuarios.sql            <- CREATE TABLE de la tabla `usuarios`
-```
 
-### Instalación del módulo de usuarios
 
-1. Ejecuta `setup_usuarios.sql` en tu base de datos (crea la tabla `usuarios`).
-2. Abre `instalar_admin.php` **una sola vez** en el navegador — crea el usuario administrador inicial (`admin` / `admin123` por defecto; puedes cambiar esos valores editando el script antes de ejecutarlo).
-3. **Elimina `instalar_admin.php` del servidor** una vez creado el administrador (por seguridad — no debe quedar accesible).
-4. Inicia sesión en `login.php` y, desde el módulo **Usuarios**, cambia la contraseña o crea más usuarios.
 
-> ⚠️ No usé una contraseña con hash "inventado" en el SQL porque bcrypt genera un hash distinto cada vez y depende del PHP de tu servidor — por eso el hash se genera con `instalar_admin.php`, garantizando que sea válido en tu entorno.
-
-### Roles y permisos
-
-| Rol | Acceso |
-|---|---|
-| **general** | Marcas, Corridas, Modelos, Existencias, Consulta de Existencias, Inventario |
-| **administrador** | Todo lo anterior **+** módulo de Usuarios (crear/editar/eliminar usuarios) |
-
-Reglas de seguridad implementadas en `api/usuarios.php`:
-- Un administrador no puede quitarse su propio rol ni desactivarse si es el **único administrador activo** del sistema (evita quedarte sin acceso).
-- Un usuario no puede eliminar su propia cuenta mientras tiene la sesión iniciada.
-- Las contraseñas se guardan con `password_hash()` (bcrypt) y se verifican con `password_verify()` — nunca en texto plano.
-
-### Cómo funciona la protección de páginas y endpoints
-
-- **Páginas** (`index.php`, `corridas.php`, etc.): incluyen `config/session.php` y llaman a `requerirLogin()` al inicio — si no hay sesión, redirige a `login.php`. `usuarios.php` usa `requerirAdmin()` en su lugar.
-- **Endpoints de la API** (`api/marcas.php`, `api/corridas.php`, etc.): ahora incluyen `config/session.php` y llaman a `requerirLoginApi()` — si no hay sesión, responden `401` en JSON en vez de redirigir (correcto para llamadas AJAX). `api/usuarios.php` usa `requerirAdminApi()`.
-
-### Layout compartido (`header.php` / `footer.php`)
-
-Todas las páginas ahora siguen este patrón:
-
-```php
-<?php
+1. Páginas normales (cualquier usuario con sesión)
+Se coloca al inicio absoluto del archivo, antes de cualquier HTML o echo:
+php<?php
 require_once __DIR__ . '/config/session.php';
-requerirLogin(); // o requerirAdmin() en usuarios.php
+requerirLogin();
 
 $tituloPagina = 'Título de la página';
 $paginaActiva = 'marcas'; // 'marcas' | 'existencias' | 'inventario' | 'usuarios'
 require_once __DIR__ . '/includes/header.php';
 ?>
+Ejemplos donde ya está así: index.php, corridas.php, modelos.php, existencias.php, consulta_existencias.php, inventario.php.
+2. Páginas solo para administradores
+Igual que arriba, pero con requerirAdmin() en vez de requerirLogin():
 
-<!-- contenido de la página -->
 
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
-<script src="assets/js/mi-pagina.js"></script>
-</body>
-</html>
-```
+php<?php
+require_once __DIR__ . '/config/session.php';
+requerirAdmin();
 
-La barra de navegación (`header.php`) muestra: **Marcas**, **Existencias**, **Inventario**, y — solo si el usuario es administrador — **Usuarios**. También muestra el nombre y rol del usuario en sesión, y un botón para cerrar sesión.
+$tituloPagina = 'Gestión de Usuarios';
+$paginaActiva = 'usuarios';
+require_once __DIR__ . '/includes/header.php';
+?>
+Ejemplo: usuarios.php.
+3. Endpoints de la API (cualquier usuario con sesión)
+Se coloca justo después de incluir database.php, antes de procesar la petición:
+php<?php
+header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/session.php';
+requerirLoginApi();
 
-## Módulo de Ventas — origen Pascal/Delphi (¡nuevo!)
+// ... resto del código del endpoint
+Ejemplo: api/marcas.php, api/corridas.php, api/modelos.php, api/existencias.php, api/consulta_existencias.php, api/inventario.php.
+4. Endpoints de la API solo para administradores
+php<?php
+header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/session.php';
+requerirAdminApi();
 
-A diferencia del resto del proyecto (que venía de Laravel), este módulo se convirtió a partir de un
-programa de punto de venta en **Object Pascal/Delphi** (`FVentasa.pas`, `FSelPago.pas`, `FM_SelVenta.pas`,
-`FConcentra.pas`) que usaba las mismas tablas MySQL que ya veníamos usando — así que **no se necesitó
-ninguna tabla nueva**, solo se completó `rventas` (que tenía datos en el respaldo pero no su `CREATE TABLE`)
-y se documentó la vista `vmodecorr` que ya existía.
+// ... resto del código del endpoint
 
-### Estructura añadida (Fase 1)
+¿Por qué hay una versión "página" y otra "API"?
+FunciónUsoQué hace si no hay sesiónrequerirLogin()Páginas HTMLRedirige a login.phprequerirAdmin()Páginas HTML (admin)Redirige a login.php, o a index.php si no es adminrequerirLoginApi()Endpoints AJAXResponde JSON {"success":false,...} con código 401requerirAdminApi()Endpoints AJAX (admin)Responde JSON con código 403 si no es admin
 
-```
-marcas-crud/
-├── api/
-│   └── ventas.php          <- Captura, costeo PEPS, contadores de empresa, guardado (solo contado)
-├── assets/js/
-│   └── ventas.js
-├── ventas.php                <- Punto de venta (código de barras + búsqueda manual + cobro)
-└── setup_ventas.sql          <- CREATE TABLE rventas (faltaba) + vista vmodecorr
-```
-
-### Qué cubre esta fase (venta de CONTADO)
-
-| Original Pascal | Conversión |
-|---|---|
-| `ECodBarraKeyPress` (Enter, código de 12 dígitos → toma 9 centrales) | JS extrae los 9 caracteres centrales igual que `Copy(ECodBarra.Text,3,9)` |
-| Prefijo `D` = devolución (`Agrega_Entrada`) | `POST api/ventas.php?action=devolucion` — regresa 1 pieza a `articulos.EXISTENCIA` |
-| `Agrega_Detalle()` (busca articulo+marca+modelo) | `GET api/ventas.php?action=buscar_codbarra` |
-| `FM_SelVenta` (búsqueda manual marca/modelo/talla) | `GET api/ventas.php?action=buscar_manual` + `action=modelos_marca` (usa la vista `vmodecorr`) |
-| F12 "Facturado" → `FSelPago` (efectivo) | Modal de cobro en `ventas.php`, valida que lo pagado ≥ total |
-| `Actualiza_Inventario(True)` — costeo **PEPS** | `POST api/ventas.php?action=guardar_contado`: busca en `peps` la entrada más antigua con existencia, toma su `PRECIOCO`, la descuenta |
-| Actualiza contadores en `empresa` (RECFISCAL, GTVTA, GTIVA, VENTADIA, etc.) | Mismo cálculo, dentro de la misma transacción PDO |
-| `Actualiza_Inventario_General()` (descuenta `articulos.EXISTENCIA`) | Igual, dentro de la transacción |
-| Inserta en `ventas` + `detventas` | Igual, con folio calculado como `MAX(VENTANO)+1` |
-| Desglose de IVA (÷1.16) en `Imprime_Ticket` | Se calcula igual (subtotal/IVA) y se regresa en la respuesta para el resumen en pantalla |
-| `FConcentra` (aviso de inventario tras cada artículo) | Se decidió **no** reproducir el grid completo de Delphi (que muestra existencias de TODOS los modelos de la marca) como una serie de ventanas modales bloqueantes — en su lugar, el resumen de la venta muestra la **existencia restante de cada artículo vendido**. Si quieres el grid completo estilo FConcentra, puedes abrir **Consulta de Existencias** filtrando por esa marca (módulo ya existente). |
-
-### Lo que se agregó en la Fase 2
-
-| Original Pascal | Conversión |
-|---|---|
-| F6 "Remisión" → `FSelPago` con `RGFormaPago` (Efectivo/Vale) | Modal "Vale / Remisión" en `ventas.php`, con las mismas dos sub-opciones |
-| Total en remisión = precio de vale (`PRECIOCO`), no precio de venta | `guardar_remision` suma `preciovale` de cada artículo, no `precio` |
-| Validación de vendedor: debe existir y `ESTADO <> 'C'` | Réplica exacta en `guardarVentaRemision()` (¡`'C'`, no `'I'`, como en otras tablas!) |
-| Validación de vale bloqueado (`bloqueados.novendedor` + `novale`) | Réplica exacta, con el motivo del bloqueo incluido en el mensaje de error |
-| `vgImporteTot / 4` ("importe de vale") mostrado en pantalla | Se calcula igual y se muestra en el resumen y en el ticket |
-| `DiaPago()` — calcula cuándo se descontará el vale de nómina | Función `calcularDiaPago()` con las mismas reglas exactas por rango de día del mes |
-| `Guarda_Venta` (rama `vbgRegVenta=False`) → `rventas`/`rdetventas`, folio `COUNT(*)+1` | Igual, incluido el detalle de que `rdetventas.PRECIOCO` se deja `NULL` (el original nunca lo llena en esta rama) |
-| Reportes Rave `ReciboPago` / `ReciboPagoVale` | Ticket HTML generado en el navegador (`imprimirTicket()` en `ventas.js`), pensado para impresoras térmicas de 80mm, que se abre en una ventana nueva y llama a `window.print()` automáticamente |
-| `Abre_Cajon_Dinero()` (comando ESC/POS directo) | Botón "Cajón" — permanece como aviso informativo; muchas impresoras de tickets abren el cajón automáticamente al recibir el trabajo de impresión, así que en la práctica el ticket impreso puede resolver esto sin código adicional, dependiendo del modelo de impresora |
-
-### Pendiente (ya no forma parte del alcance original, pero quedó anotado por si lo necesitas después)
-
-- Gestión de **vendedores** y **vales bloqueados** vía interfaz (hoy son de solo lectura — se leen directamente de las tablas ya existentes).
-- Reportes de corte de caja / cierre de turno (usan los contadores de `empresa`, que ya se actualizan correctamente).
-
-### Nota técnica: tabla `peps` sin llave primaria
-
-La tabla `peps` no tiene una columna `id`. El código de la API actualiza la fila más antigua con existencia
-usando `MARCANO+MODELONO+TALLA+FECHAENT+PRECIOCO` como filtro (con `LIMIT 1`), igual de seguro que el original
-en Delphi. Si vas a manejar mucho volumen, `setup_ventas.sql` incluye el `ALTER TABLE` opcional para agregarle
-un `id AUTO_INCREMENT`.
-
-## Todos los módulos convertidos ✅
-
-- **Autenticación y Usuarios** (login, roles, layout compartido)
-- **Marcas**, **Corridas**, **Modelos** (CRUD completos)
-- **Existencias** (captura por modelo/talla)
-- **Consulta de Existencias**, **Inventario**
-- **Ventas** (Fase 1 + Fase 2 completas): captura, cobro de contado con costeo PEPS, pago con vale/remisión, ticket imprimible en HTML, devoluciones simples
+Una página HTML necesita redirigir (el navegador cambia de URL), mientras que un endpoint AJAX necesita responder JSON (para que el $.ajax() de jQuery lo capture en .fail() sin romper la página). Por eso son funciones separadas, aunque ambas están definidas en el mismo archivo config/session.php que ya tienes.
