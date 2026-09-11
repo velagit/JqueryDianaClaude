@@ -46,6 +46,12 @@ $usuario      = usuarioActual();
                     </a>
                 </li>
 
+                <li class="nav-item">
+                    <a class="nav-link <?= $paginaActiva === 'pedidos' ? 'active' : '' ?>" href="pedidos.php">
+                        <i class="bi bi-truck me-1"></i> Pedidos
+                    </a>
+                </li>
+                
                  <li class="nav-item">
                     <a class="nav-link <?= $paginaActiva === 'ventas' ? 'active' : '' ?>" href="ventas.php">
                         <i class="bi bi-cash-coin me-1"></i> Ventas

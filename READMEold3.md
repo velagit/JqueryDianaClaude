@@ -398,41 +398,6 @@ original (número de vale, número de vendedor(a), fecha) y el mismo total sumad
 Al hacer clic en una nota se muestra su detalle de artículos, usando la vista `vmodrventas` (igual que
 `IBVModRVentas` en el original).
 
-## Módulo de Pedidos a Proveedor — de `FM_Pedidos.pas`
-
-Convertido a partir de `FM_Pedidos.pas`. Es un "armador de pedido de compra": se elige marca+corrida, se ve
-la existencia actual por modelo/talla como referencia, se captura la cantidad a pedir, y esto se va
-**acumulando** (posiblemente de varias marcas) hasta que se imprime el reporte consolidado — momento en el
-que el acumulado se vacía, igual que el original.
-
-### Estructura añadida
-
-```
-marcas-crud/
-├── api/
-│   └── pedidos.php        <- Equivalente a FM_Pedidos.pas
-├── assets/js/
-│   └── pedidos.js
-└── pedidos.php              <- Página del armador de pedidos
-```
-
-### Equivalencias
-
-| Original Pascal | Conversión |
-|---|---|
-| `Llena_Grid()` (existencia de referencia + captura de cantidad) | `GET api/pedidos.php?action=grid` — la interfaz muestra la existencia en una fila gris y la captura justo debajo |
-| Tablas de staging `pcabecera` (encabezados `T_01..T_20`) y `pedidos` (detalle) | **Se reutilizan tal cual** — mismo esquema, para no romper compatibilidad si sigues usando el reporte original en paralelo |
-| Regla "si el 3er carácter de la talla es `5` → `---`" en las etiquetas de columna | Réplica exacta en `agregarPedido()` |
-| `BBAceptarClick()` (agrega a la cabecera/detalle sin imprimir todavía) | `POST api/pedidos.php?action=agregar` — botón "Agregar al Pedido Acumulado" |
-| `BImprimirClick()` (imprime reporte Rave "Pedidos", luego vacía `pcabecera`/`pedidos`) | `POST api/pedidos.php?action=imprimir` — genera un reporte HTML imprimible agrupado por marca/corrida, luego vacía ambas tablas |
-| Búsqueda de marca por número o por nombre (con modal `FSelMarca` si hay varias coincidencias) | Simplificado a un `<select>` de marcas (más simple y igual de funcional en un navegador) |
-
-### Cambio deliberado respecto al original
-
-Agregué un botón **"Ver acumulado"** (ícono de lista) que no existía en el Delphi original — permite revisar
-qué se ha ido agregando antes de imprimir, ya que en la versión web es fácil perder de vista el estado
-acumulado entre sesiones de captura. Si prefieres que no esté, lo puedo quitar.
-
 ### Nota técnica: tabla `peps` sin llave primaria
 
 La tabla `peps` no tiene una columna `id`. El código de la API actualiza la fila más antigua con existencia
@@ -448,4 +413,3 @@ un `id AUTO_INCREMENT`.
 - **Consulta de Existencias**, **Inventario**
 - **Ventas**: captura, cobro de contado con costeo PEPS, pago con vale/remisión, ticket imprimible en HTML, devoluciones simples
 - **Vales**: gestión de vendedores, vales bloqueados, corte de caja diario, consulta histórica de vales
-- **Pedidos a Proveedor**: armador de pedido acumulado por marca/corrida, con reporte imprimible consolidado
