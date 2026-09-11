@@ -1,16 +1,16 @@
 $(function () {
     const API_URL = 'api/corte.php';
-    let datosEstadoActual = null; // { empresa: {...}, fecha: '...' }
+    let datosEmpresaActual = null;
 
     cargarEstado();
 
     $('#btn-imprimir-corte').on('click', function () {
-        if (!datosEstadoActual) return;
-        imprimirCorte(datosEstadoActual, false);
+        if (!datosEmpresaActual) return;
+        imprimirCorte(datosEmpresaActual, false);
     });
 
     $('#btn-confirmar-corte').on('click', function () {
-        if (!datosEstadoActual) return;
+        if (!datosEmpresaActual) return;
 
         Swal.fire({
             title: '¿Confirmar corte de caja?',
@@ -32,7 +32,7 @@ $(function () {
         mostrarSpinner(true);
         $.get(API_URL, { action: 'estado' }, function (respuesta) {
             if (respuesta.success) {
-                datosEstadoActual = respuesta.data;
+                datosEmpresaActual = respuesta.data.empresa;
                 renderizarEstado(respuesta.data);
             } else {
                 Swal.fire('Error', respuesta.message, 'error');
